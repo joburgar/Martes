@@ -1,3 +1,5 @@
+#Running this script assumes that you have downloaded the google doc "Collated Martes Survey Results.xlsx" and placed it in the project folder
+
 #Load Packages
 library(tidyverse)
 library(readxl)
