@@ -30,12 +30,15 @@ df1_Qcat <- df1_Qcat %>% pivot_longer(cols=c(Conference, Online), names_to = "Ty
 df1_Qcat %>% ungroup() %>% count(CMP_Category) %>% print(n=33)
 df1_Qcat$Type <- factor(df1_Qcat$Type, levels = c("Online", "Conference"))
 
+pal <- pnw_palette(name="Winter",n=2,type="discrete")
+
 create_df1_plot <- function(Q1name=Q1name){
   df1_Q1 <- df1_Qcat %>% filter(Short %in% Q1name) %>% filter(Sum>0) %>% filter(CMP_Category!="NA") %>%
   mutate(CMP_Category = fct_reorder(CMP_Category, Sum)) %>%
   ggplot( aes(x=CMP_Category, y=Sum, fill=Type)) +
   geom_bar(position = "dodge", stat="identity", alpha=0.6, width=0.4) +
-  scale_fill_manual(values = alpha(c("#137a63","#0a3a2a"))) +
+  # scale_fill_manual(values = alpha(c("#137a63","#0a3a2a"))) +
+  scale_fill_manual(values = pal) +
   coord_flip() +
   xlab("") +
   ylab("Votes") +
@@ -45,16 +48,18 @@ create_df1_plot <- function(Q1name=Q1name){
   facet_wrap(~Short)
 }
 
-df1_Q5 <- create_df1_plot(Q1name=unique(df1_Qcat$Short)[5])
+unique(df1_Qcat$Short)
 
-Cairo(file="df1_Q5_hist.PNG", 
+df1_Q1 <- create_df1_plot(Q1name=unique(df1_Qcat$Short)[1])
+
+Cairo(file="df1_Q1_hist.PNG", 
       type="png",
       width=1600, 
       height=2000, 
       pointsize=12,
       bg="white",
       dpi=300)
-df1_Q5
+df1_Q1
 dev.off()
 
 df1_Qcat %>% ungroup() %>% count(Short)
@@ -63,7 +68,7 @@ df1_Qcat <- df1_Qcat %>% mutate(Type = str_replace_all(Type, fixed("Conference")
 
 pal <- pnw_palette(name="Winter",n=2,type="discrete")
 
-df1_Q3Q4 <- df1_Qcat %>% filter(grepl("Threats", Short)) %>% filter(CMP_Category!="NA") %>%
+df1_Q4Q5 <- df1_Qcat %>% filter(grepl("Threats", Short)) %>% filter(CMP_Category!="NA") %>%
   # ggplot(aes(fill=Type, x=fct_rev(CMP_Category), y=Sum)) +
   ggplot(aes(x = reorder(CMP_Category, Sum), y=Sum, fill=Type))+
   geom_bar(stat="identity", position="dodge", alpha=0.6, width=0.4) +
@@ -75,15 +80,38 @@ df1_Q3Q4 <- df1_Qcat %>% filter(grepl("Threats", Short)) %>% filter(CMP_Category
   theme(legend.position="bottom", legend.title = element_blank()) +
   facet_wrap(~Short)
 
-Cairo(file="df1_Q3Q4_hist.PNG", 
+Cairo(file="df1_Q4Q5_hist.PNG", 
       type="png",
       width=2200, 
       height=2000, 
       pointsize=12,
       bg="white",
       dpi=300)
-df1_Q3Q4
+df1_Q4Q5
 dev.off()
+
+df1_Q3Q6 <- df1_Qcat %>% filter(grepl("Actions|Obstacles", Short)) %>% filter(CMP_Category!="NA") %>%
+  ggplot(aes(fill=Type, x=fct_rev(CMP_Category), y=Sum)) +
+  # ggplot(aes(x = reorder(CMP_Category, Sum), y=Sum, fill=Type))+
+  geom_bar(stat="identity", position="dodge", alpha=0.6, width=0.4) +
+  scale_fill_manual(values = pal) +
+  coord_flip() +
+  xlab("") +
+  ylab("Count of Responses") +
+  theme_bw() +
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  facet_wrap(~Short)
+
+Cairo(file="df1_Q3Q6_hist.PNG", 
+      type="png",
+      width=2200, 
+      height=2000, 
+      pointsize=12,
+      bg="white",
+      dpi=300)
+df1_Q3Q6
+dev.off()
+
 
 # Graphs df2
 df2_Q <- df2 %>% count(Question)
