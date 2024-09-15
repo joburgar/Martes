@@ -23,12 +23,13 @@ colnames(df2) <- c("Question","Threat_Action","CMP_Category","CMP_Category_OLD",
 # Graphs df1
 df1_Q <- df1 %>% count(Question)
 df1_Q$Short <- c("Achievements", "Information Needs - Jurisdiction", "Obstacles - Jurisdiction", "Threats - Global", "Threats - Jurisdiction", "Actions Needed - Jurisdiction")
-df1_Qcat <- df1 %>% group_by(Question, Threat_Action,CMP_Category, CMP_SubCategory) %>% summarize(Conference = sum(Count_Conference), Online = sum(Count_Online))
+df1_Qcat <- df1 %>% group_by(Question, Threat_Action,CMP_Category) %>% summarize(Conference = sum(Count_Conference), Online = sum(Count_Online))
 df1_Qcat <- left_join(df1_Qcat, df1_Q %>% select(-n))
 
 df1_Qcat <- df1_Qcat %>% pivot_longer(cols=c(Conference, Online), names_to = "Type", values_to = "Sum")
 
 df1_Qcat %>% ungroup() %>% count(CMP_Category) %>% print(n=33)
+
 df1_Qcat <- df1_Qcat %>% 
   mutate(Prop = case_when(Type == "Online" ~ (Sum/46)*100,
                           Type == "Conference" ~ (Sum/101)*100))
@@ -51,6 +52,22 @@ create_df1_plot <- function(Q1name=Q1name){
   facet_wrap(~Short)
 }
 
+create_df1_plot_subcat <- function(Q1name=Q1name){
+  df1_Q1 <- df1_Qcat %>% filter(Short %in% Q1name) %>% filter(CMP_Category!="NA") %>%
+    mutate(CMP_Category = fct_reorder(CMP_Category, Prop)) %>%
+    ggplot( aes(x=CMP_Category, y=Prop, fill=Type)) +
+    geom_bar(position = "dodge", stat="identity", alpha=0.6, width=0.4) +
+    # scale_fill_manual(values = alpha(c("#137a63","#0a3a2a"))) +
+    scale_fill_manual(values = pal) +
+    coord_flip() +
+    xlab("") +
+    ylab("Percent of Votes (%)") +
+    theme_bw() +
+    theme(legend.position="bottom") +
+    theme(legend.title=element_blank(), )+
+    facet_wrap(~Short)
+}
+
 unique(df1_Qcat$Short)
 
 df1_Q1 <- create_df1_plot(Q1name=unique(df1_Qcat$Short)[1])
@@ -64,6 +81,46 @@ Cairo(file="df1_Q1_hist_perc.PNG",
       dpi=300)
 df1_Q1
 dev.off()
+
+
+df1_Q$Short <- c("Achievements", "Information Needs - Jurisdiction", "Obstacles - Jurisdiction", "Threats - Global", "Threats - Jurisdiction", "Actions Needed - Jurisdiction")
+df1_Qcat2 <- df1 %>% group_by(Question, Threat_Action,CMP_Category, CMP_SubCategory) %>% summarize(Conference = sum(Count_Conference), Online = sum(Count_Online))
+df1_Qcat2 <- left_join(df1_Qcat2, df1_Q %>% select(-n))
+df1_Qcat2 <- df1_Qcat2 %>% pivot_longer(cols=c(Conference, Online), names_to = "Type", values_to = "Sum")
+df1_Qcat2 %>% ungroup() %>% count(CMP_SubCategory) %>% print(n=37)
+
+df1_Qcat2 <- df1_Qcat2 %>% 
+  mutate(Prop = case_when(Type == "Online" ~ (Sum/46)*100,
+                          Type == "Conference" ~ (Sum/101)*100))
+
+Wins_rank <- df1_Qcat %>% filter(Short %in% unique(df1_Qcat$Short)[1]) %>% group_by(CMP_Category) %>% summarise(Sum = sum(Sum))
+Wins_rank <- Wins_rank %>% arrange(desc(Sum))
+Wins_rank$Rank <- rownames(Wins_rank)
+Wins_rank$CMP_Category <- as.factor(Wins_rank$CMP_Category)
+levels(Wins_rank$CMP_Category)
+Wins_rank <- Wins_rank %>% mutate(CMP_Category = fct_reorder(CMP_Category, desc(Sum)))
+
+wins <- df1_Qcat2 %>% ungroup() %>% filter(Short %in% unique(df1_Qcat$Short)[1]) %>% filter(CMP_Category!="NA") %>% dplyr::select(-c(Question, Threat_Action))
+wins <-left_join(wins, Wins_rank %>% filter(CMP_Category!="NA") %>% dplyr::select(-Sum))
+wins %>% print(n=26)
+wins %>% arrange(Rank, Type)
+wins$Rank <- as.numeric(wins$Rank)
+
+pal <- pnw_palette(name="Moth",n=10,type="continuous")
+
+test <- wins %>% ungroup() %>% arrange(Rank, Type) %>%
+  mutate(CMP_SubCategory = fct_reorder(CMP_SubCategory, -Rank)) %>%
+  ggplot( aes(x=CMP_SubCategory, y=Prop, fill=CMP_Category)) +
+  geom_bar(position = "dodge", stat="identity", alpha=0.6, width=0.4) +
+  # scale_fill_manual(values = alpha(c("#137a63","#0a3a2a"))) +
+  scale_fill_manual(values = pal) +
+  coord_flip() +
+  xlab("") +
+  ylab("Percent of Votes (%)") +
+  theme_bw() +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank(), )+
+  facet_grid(~Short + Type)
 
 df1 %>% count(Question)
 df1 %>% filter(grepl("wins", Question)) %>% group_by(CMP_Category,CMP_SubCategory) %>% summarise(sum(Count_Conference))
