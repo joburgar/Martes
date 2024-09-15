@@ -106,9 +106,9 @@ wins %>% print(n=26)
 wins %>% arrange(Rank, Type)
 wins$Rank <- as.numeric(wins$Rank)
 
-pal <- pnw_palette(name="Moth",n=10,type="continuous")
+pal <- pnw_palette(name="Bay",n=10,type="continuous")
 
-test <- wins %>% ungroup() %>% arrange(Rank, Type) %>%
+df1_Q1_hist_perc_subcat <- wins %>% ungroup() %>% arrange(Rank, Type) %>%
   mutate(CMP_SubCategory = fct_reorder(CMP_SubCategory, -Rank)) %>%
   ggplot( aes(x=CMP_SubCategory, y=Prop, fill=CMP_Category)) +
   geom_bar(position = "dodge", stat="identity", alpha=0.6, width=0.4) +
@@ -121,6 +121,16 @@ test <- wins %>% ungroup() %>% arrange(Rank, Type) %>%
   theme(legend.position="bottom") +
   theme(legend.title=element_blank(), )+
   facet_grid(~Short + Type)
+
+Cairo(file="df1_Q1_hist_perc_subcat.PNG", 
+      type="png",
+      width=4200, 
+      height=2000, 
+      pointsize=14,
+      bg="white",
+      dpi=300)
+df1_Q1_hist_perc_subcat
+dev.off()
 
 df1 %>% count(Question)
 df1 %>% filter(grepl("wins", Question)) %>% group_by(CMP_Category,CMP_SubCategory) %>% summarise(sum(Count_Conference))
