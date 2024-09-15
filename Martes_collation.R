@@ -11,37 +11,40 @@ library(PNWColors)
 sheets <- excel_sheets("Collated Martes Survey Results.xlsx")
 
 df1 <- read_excel("Collated Martes Survey Results.xlsx", sheet = sheets[1])
-colnames(df1) <- c("Question","Count_Online","Count_Conference","Threat_Action","CMP_Category","CMP_SubCategory","Orig_Category","Online_Comments")
+colnames(df1) <- c("Question","Count_Online","Count_Conference","Threat_Action","CMP_Category","CMP_Category_OLD","CMP_SubCategory","CMP_SubCategory_OLD","Orig_Category","Online_Comments")
 glimpse(df1)
+df1 %>% summarise(sum(Count_Online), sum(Count_Conference, na.rm=T))
 
 df2 <- read_excel("Collated Martes Survey Results.xlsx", sheet = sheets[3])
 glimpse(df2)
-colnames(df2) <- c("Question","Threat_Action","CMP_Category","CMP_SubCategory","Orig_Category","InPerson_Comments")
+colnames(df2) <- c("Question","Threat_Action","CMP_Category","CMP_Category_OLD","CMP_SubCategory","CMP_SubCategory_OLD","Orig_Category","InPerson_Comments")
 
 
 # Graphs df1
 df1_Q <- df1 %>% count(Question)
-df1_Q$Short <- c("Martes Wins", "Information Needs - Jurisdiction", "Obstacles - Jurisdiction", "Threats - Global", "Threats - Jurisdiction", "Actions Needed - Jurisdiction")
-df1_Qcat <- df1 %>% group_by(Question, Threat_Action,CMP_Category) %>% summarize(Conference = sum(Count_Conference), Online = sum(Count_Online))
+df1_Q$Short <- c("Achievements", "Information Needs - Jurisdiction", "Obstacles - Jurisdiction", "Threats - Global", "Threats - Jurisdiction", "Actions Needed - Jurisdiction")
+df1_Qcat <- df1 %>% group_by(Question, Threat_Action,CMP_Category, CMP_SubCategory) %>% summarize(Conference = sum(Count_Conference), Online = sum(Count_Online))
 df1_Qcat <- left_join(df1_Qcat, df1_Q %>% select(-n))
 
 df1_Qcat <- df1_Qcat %>% pivot_longer(cols=c(Conference, Online), names_to = "Type", values_to = "Sum")
 
 df1_Qcat %>% ungroup() %>% count(CMP_Category) %>% print(n=33)
-df1_Qcat$Type <- factor(df1_Qcat$Type, levels = c("Online", "Conference"))
+df1_Qcat <- df1_Qcat %>% 
+  mutate(Prop = case_when(Type == "Online" ~ (Sum/46)*100,
+                          Type == "Conference" ~ (Sum/101)*100))
 
 pal <- pnw_palette(name="Winter",n=2,type="discrete")
 
 create_df1_plot <- function(Q1name=Q1name){
-  df1_Q1 <- df1_Qcat %>% filter(Short %in% Q1name) %>% filter(Sum>0) %>% filter(CMP_Category!="NA") %>%
-  mutate(CMP_Category = fct_reorder(CMP_Category, Sum)) %>%
-  ggplot( aes(x=CMP_Category, y=Sum, fill=Type)) +
+  df1_Q1 <- df1_Qcat %>% filter(Short %in% Q1name) %>% filter(CMP_Category!="NA") %>%
+  mutate(CMP_Category = fct_reorder(CMP_Category, Prop)) %>%
+  ggplot( aes(x=CMP_Category, y=Prop, fill=Type)) +
   geom_bar(position = "dodge", stat="identity", alpha=0.6, width=0.4) +
   # scale_fill_manual(values = alpha(c("#137a63","#0a3a2a"))) +
   scale_fill_manual(values = pal) +
   coord_flip() +
   xlab("") +
-  ylab("Votes") +
+  ylab("Percent of Votes (%)") +
   theme_bw() +
   theme(legend.position="bottom") +
   theme(legend.title=element_blank(), )+
@@ -52,7 +55,7 @@ unique(df1_Qcat$Short)
 
 df1_Q1 <- create_df1_plot(Q1name=unique(df1_Qcat$Short)[1])
 
-Cairo(file="df1_Q1_hist.PNG", 
+Cairo(file="df1_Q1_hist_perc.PNG", 
       type="png",
       width=1600, 
       height=2000, 
@@ -62,25 +65,30 @@ Cairo(file="df1_Q1_hist.PNG",
 df1_Q1
 dev.off()
 
+df1 %>% count(Question)
+df1 %>% filter(grepl("wins", Question)) %>% group_by(CMP_Category,CMP_SubCategory) %>% summarise(sum(Count_Conference))
+
+
 df1_Qcat %>% ungroup() %>% count(Short)
 # df1_Qcat_long <- pivot_longer(df1_Qcat, cols=c(Conference, Online), names_to = "Survey Type", values_to = "Count")
 df1_Qcat <- df1_Qcat %>% mutate(Type = str_replace_all(Type, fixed("Conference"), "In-person"))
 
 pal <- pnw_palette(name="Winter",n=2,type="discrete")
 
-df1_Q4Q5 <- df1_Qcat %>% filter(grepl("Threats", Short)) %>% filter(CMP_Category!="NA") %>%
+df1_Qcat %>% count(CMP_Category)
+df1_Q4Q5 <- df1_Qcat %>% filter(grepl("threats", Question)) %>% filter(CMP_Category!="NA") %>%
   # ggplot(aes(fill=Type, x=fct_rev(CMP_Category), y=Sum)) +
-  ggplot(aes(x = reorder(CMP_Category, Sum), y=Sum, fill=Type))+
+  ggplot(aes(x = reorder(CMP_Category, Prop), y=Sum, fill=Type))+
   geom_bar(stat="identity", position="dodge", alpha=0.6, width=0.4) +
   scale_fill_manual(values = pal) +
   coord_flip() +
   xlab("") +
-  ylab("Count of Responses") +
+  ylab("Percent of Votes (%)") +
   theme_bw() +
   theme(legend.position="bottom", legend.title = element_blank()) +
   facet_wrap(~Short)
 
-Cairo(file="df1_Q4Q5_hist.PNG", 
+Cairo(file="df1_Q4Q5_hist_perc.PNG", 
       type="png",
       width=2200, 
       height=2000, 
@@ -90,9 +98,10 @@ Cairo(file="df1_Q4Q5_hist.PNG",
 df1_Q4Q5
 dev.off()
 
-df1_Q3Q6 <- df1_Qcat %>% filter(grepl("Actions|Obstacles", Short)) %>% filter(CMP_Category!="NA") %>%
-  ggplot(aes(fill=Type, x=fct_rev(CMP_Category), y=Sum)) +
-  # ggplot(aes(x = reorder(CMP_Category, Sum), y=Sum, fill=Type))+
+df1_Qcat %>% filter(grepl("Actions|Obstacles", Short)) %>% filter(CMP_Category!="NA") %>% print(n=34) %>% select(Short, CMP_Category, Sum)
+
+df1_Q3Q6 <- df1_Qcat %>% filter(grepl("Actions|Obstacles", Short)) %>% filter(CMP_Category!="NA") %>% filter(Sum!="NA") %>% 
+  ggplot(aes(x = reorder(CMP_Category, Sum), y=Sum, fill=Type))+
   geom_bar(stat="identity", position="dodge", alpha=0.6, width=0.4) +
   scale_fill_manual(values = pal) +
   coord_flip() +
