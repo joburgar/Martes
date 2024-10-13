@@ -91,6 +91,7 @@ ggplot() +
 #############################################
 
 # Species Table
+# assumes you have downloaded mass data and put in projec folder: https://knb.ecoinformatics.org/view/doi%3A10.5063%2FAA%2Fnceas.196.3
 
 # NCEAS 2182: Smith: Body paleoecology: Linking temporal and taxonomic scales size in ecology and pattern and process across spatial, National Center Ecological Analysis for and Synthesis, & Felisa Smith. (2004). Macroecological database of mammalian body mass. Knowledge Network for Biocomplexity. 
 # doi:10.5063/AA/nceas.196.3
