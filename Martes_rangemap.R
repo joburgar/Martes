@@ -114,3 +114,19 @@ Guldf %>% group_by (Genus, Species) %>% summarise(mean = mean(CombinedMass), min
 # 9 Martes nobilis     1950   1950 
 # 10 Martes pennanti    4000   4000 # Pekania pennanti
 # 11 Martes zibellina   1130   1130 
+
+Guldf %>% count(Ref)
+# Ref               n
+# 111               1
+# 111, 114, 117     2
+# 118               1
+# 131               1
+# 141               2
+# 28                1
+# 60                4
+# 68                3
+# 75                1
+
+# references: https://www.esapubs.org/archive/ecol/E084/094/metadata.htm
+
+Guldf %>% group_by(Genus) %>% dplyr::select("Species", "Ref")

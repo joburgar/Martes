@@ -168,12 +168,13 @@ dev.off()
 df1_Qcat %>% filter(grepl("Actions|Obstacles", Short)) %>% filter(CMP_Category!="NA") %>% print(n=34) %>% select(Short, CMP_Category, Sum)
 
 df1_Q3Q6 <- df1_Qcat %>% filter(grepl("Actions|Obstacles", Short)) %>% filter(CMP_Category!="NA") %>% filter(Sum!="NA") %>% 
-  ggplot(aes(x = reorder(CMP_Category, Sum), y=Sum, fill=Type))+
+  # ggplot(aes(fill=Type, x=fct_rev(CMP_Category), y=Sum)) +
+  ggplot(aes(x = reorder(CMP_Category, Prop), y=Sum, fill=Type))+
   geom_bar(stat="identity", position="dodge", alpha=0.6, width=0.4) +
   scale_fill_manual(values = pal) +
   coord_flip() +
   xlab("") +
-  ylab("Count of Responses") +
+  ylab("Percent of Votes (%)") +
   theme_bw() +
   theme(legend.position="bottom", legend.title = element_blank()) +
   facet_wrap(~Short)
